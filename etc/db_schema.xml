@@ -75,25 +75,21 @@
             <column name="store_filter_id"/>
         </constraint>
 
-        <index referenceId="ETF_BISN_SUB_IDX_PRODUCT_STORE_STATUS" indexType="btree"
-               comment="Hot lookup: 'how many active subs for product X in store Y' — used by the StockSaveObserver">
+        <index referenceId="ETF_BISN_SUB_IDX_PRODUCT_STORE_STATUS" indexType="btree">
             <column name="product_id"/>
             <column name="store_id"/>
             <column name="status"/>
         </index>
 
-        <index referenceId="ETF_BISN_SUB_IDX_CUSTOMER" indexType="btree"
-               comment="Customer 'My Subscriptions' page lookup">
+        <index referenceId="ETF_BISN_SUB_IDX_CUSTOMER" indexType="btree">
             <column name="customer_id"/>
         </index>
 
-        <index referenceId="ETF_BISN_SUB_IDX_TOKEN" indexType="btree"
-               comment="One-click unsubscribe lookup by token">
+        <index referenceId="ETF_BISN_SUB_IDX_TOKEN" indexType="btree">
             <column name="unsubscribe_token"/>
         </index>
 
-        <index referenceId="ETF_BISN_SUB_IDX_STATUS_SUBSCRIBED_AT" indexType="btree"
-               comment="Auto-expiry cron: find rows older than N days with status=pending">
+        <index referenceId="ETF_BISN_SUB_IDX_STATUS_SUBSCRIBED_AT" indexType="btree">
             <column name="status"/>
             <column name="subscribed_at"/>
         </index>
@@ -166,8 +162,7 @@
             <column name="queue_id"/>
         </constraint>
 
-        <index referenceId="ETF_BISN_QUE_IDX_STATUS_SCHEDULED" indexType="btree"
-               comment="Hot consumer-cron query: 'queued rows ready to send'">
+        <index referenceId="ETF_BISN_QUE_IDX_STATUS_SCHEDULED" indexType="btree">
             <column name="status"/>
             <column name="scheduled_at"/>
         </index>

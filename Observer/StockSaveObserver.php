@@ -11,6 +11,7 @@ use ETechFlow\BackInStockNotification\Model\Config;
 use ETechFlow\BackInStockNotification\Model\NotificationQueueRepository;
 use ETechFlow\BackInStockNotification\Model\NotificationQueueFactory;
 use ETechFlow\BackInStockNotification\Model\Performance\Profiler;
+use ETechFlow\BackInStockNotification\Model\ResourceModel\Subscription\CollectionFactory;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
@@ -38,6 +39,7 @@ class StockSaveObserver implements ObserverInterface
         private readonly NotificationQueueRepository $queueRepository,
         private readonly NotificationQueueFactory $queueFactory,
         private readonly NdeEligibilityAdapter $ndeAdapter,
+        private readonly CollectionFactory $collectionFactory,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -68,12 +70,18 @@ class StockSaveObserver implements ObserverInterface
                 return;
             }
 
-            // For each store the product is visible in, check for subs and enqueue.
-            // For simplicity (and because most stock changes apply globally), we
-            // iterate over stores the product belongs to. A more granular
-            // implementation would only touch stores whose actual sellable state
-            // changed; that's a v1.1 optimisation.
-            foreach ($this->getStoreIdsForProduct($productId) as $storeId) {
+            // Get every distinct store_id that has an active subscription for
+            // this product. Cheaper than walking product-website mappings and
+            // correct in all cases: if nobody subscribed on store X for this
+            // product, we don't need to touch store X.
+            //
+            // Why this works: stock changes typically apply globally (one
+            // qty + is_in_stock per stock_item row in legacy single-source
+            // mode). A 0 → positive transition means the product is now
+            // sellable everywhere it's published; we just need to notify
+            // every subscription that's waiting on this product, regardless
+            // of which store they subscribed on.
+            foreach ($this->getStoreIdsWithActiveSubs($productId) as $storeId) {
                 $subs = $this->subscriptionRepository->getActiveForProductAndStore($productId, $storeId);
                 if (!$subs) {
                     continue;
@@ -129,17 +137,35 @@ class StockSaveObserver implements ObserverInterface
     }
 
     /**
-     * Stores this product is visible in. Stub for now — most installs are
-     * single-store so we return [0] (admin/all-stores).
+     * Distinct store_ids that have at least one active (pending or confirmed)
+     * subscription for this product.
      *
-     * v1.1: walk catalog_product_website + store_website to find the actual
-     * set of store_ids the product is sellable in.
+     * Sidesteps the "what stores is the product visible in?" question (which
+     * is expensive to compute via catalog_product_website joins) by asking
+     * the inverse question that's already indexed on our subscription table:
+     * "which stores have someone waiting on this product?"
+     *
+     * Hot-path: indexed on (product_id, store_id, status).
      *
      * @return int[]
      */
-    private function getStoreIdsForProduct(int $productId): array
+    private function getStoreIdsWithActiveSubs(int $productId): array
     {
-        return [0];
+        $collection = $this->collectionFactory->create();
+        $collection->getSelect()
+            ->reset(\Magento\Framework\DB\Select::COLUMNS)
+            ->columns('store_id')
+            ->distinct(true)
+            ->where('product_id = ?', $productId)
+            ->where('status IN (?)', [
+                \ETechFlow\BackInStockNotification\Api\Data\SubscriptionInterface::STATUS_PENDING,
+                \ETechFlow\BackInStockNotification\Api\Data\SubscriptionInterface::STATUS_CONFIRMED,
+            ]);
+        $storeIds = [];
+        foreach ($collection->getConnection()->fetchCol($collection->getSelect()) as $id) {
+            $storeIds[] = (int) $id;
+        }
+        return $storeIds;
     }
 
     /**

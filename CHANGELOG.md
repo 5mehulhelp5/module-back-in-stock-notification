@@ -4,6 +4,29 @@ All notable changes to this module. Adheres to [Semantic Versioning](https://sem
 
 ---
 
+## [1.0.1] — 2026-05-20 — Real-install hotfix (3 bugs caught by live Magento 2.4.8 test)
+
+Caught the moment we ran this module against a real Magento install for the first time. None of these would have shown up in `php -l` / composer-resolution / XSD-validation — only `setup:upgrade` and a full end-to-end run surface them.
+
+### Fixed
+
+- **`etc/db_schema.xml`: invalid `comment="..."` attributes on `<index>` elements.** Magento's declarative-schema XSD only permits `comment` on `<table>` and `<column>`, not on `<index>` or `<constraint>`. `setup:upgrade` failed with: *"Element 'index', attribute 'comment': The attribute 'comment' is not allowed. Line: 96 / Line: 170"*, and the two BISN tables never got created. Five invalid attributes stripped; XML stays well-formed. Subsystem-by-subsystem table comments (on `<table>` and `<column>`) are unaffected.
+- **`Observer/StockSaveObserver::getStoreIdsForProduct()` was a stub that returned only `[0]`.** Any store-scoped subscription (the normal case — `store_id=1` for the default store view) was missed, so even when stock came back, the queue stayed empty. Replaced with `getStoreIdsWithActiveSubs(productId)` which queries DISTINCT store_id from the subscription table for active subs on this product. Hot-path-indexed on `(product_id, store_id, status)`. Adds one constructor arg (`CollectionFactory`) — requires `setup:di:compile` after upgrade.
+- **Test/Unit/Model/LicenseValidatorTest.php added.** 15 PHPUnit tests, 37 assertions, covering: HMAC determinism, www-stripping, case-insensitive canonicalisation, key uniqueness per host, per-module vs bundle key differentiation, whitespace trimming, 18 dev-host patterns recognised, 5 production-host patterns NOT mistakenly recognised as dev, isValid() on dev/prod hosts, tamper-detection. All 15 pass.
+
+### Migration
+
+```
+composer update etechflow/module-back-in-stock-notification
+bin/magento setup:upgrade
+bin/magento setup:di:compile
+# Restart php-fpm to clear OPcache (mandatory on prod with opcache.validate_timestamps=0)
+```
+
+If you were on v1.0.0 and `setup:upgrade` failed (you would have seen the index/comment XSD error), the v1.0.1 upgrade applies cleanly — the failed v1.0.0 install didn't create the tables, so re-running setup:upgrade after `composer update` will create them now.
+
+---
+
 ## [1.0.0] — 2026-05-20 — Customer subscribes, gets emailed when stock returns
 
 First commercial release. Solves the universal "customer wanted the product, you were OOS, you lost the sale" problem.
