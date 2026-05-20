@@ -14,6 +14,8 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Controller\Result\Json as JsonResult;
+use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Controller\ResultInterface;
@@ -26,19 +28,23 @@ use Psr\Log\LoggerInterface;
 /**
  * POST handler for the PDP subscribe form.
  *
- * Validates form-key, validates email + product, deduplicates against
- * existing subscriptions, persists. On double-opt-in mode it stays in
- * status=pending and (Phase 2) sends a confirmation email; otherwise
- * marks confirmed immediately.
+ * Dual-mode: when the request includes `X-Requested-With: XMLHttpRequest`
+ * (or `Accept: application/json`), returns a JSON envelope that the
+ * inline-AJAX progressive-enhancement script renders inline. Otherwise
+ * falls back to the classic flash-message + redirect-to-referrer flow,
+ * so JS-disabled visitors still get a working subscribe.
  *
- * Never crashes — every failure mode redirects back to the referrer with
- * a clear error message.
+ * Same persistence + dedupe + license + double-opt-in logic in both
+ * paths — only the response shape differs.
+ *
+ * Never crashes — every failure mode returns a clean error response.
  */
 class Create implements HttpPostActionInterface
 {
     public function __construct(
         private readonly RequestInterface $request,
         private readonly RedirectFactory $redirectFactory,
+        private readonly JsonFactory $jsonFactory,
         private readonly FormKeyValidator $formKeyValidator,
         private readonly Config $config,
         private readonly SubscriptionRepositoryInterface $subscriptionRepository,
@@ -54,17 +60,14 @@ class Create implements HttpPostActionInterface
 
     public function execute(): ResultInterface
     {
-        $redirect = $this->redirectFactory->create();
         $referrer = (string) $this->request->getServer('HTTP_REFERER', '') ?: $this->urlBuilder->getUrl('');
 
         if (!$this->config->isEnabled()) {
-            $this->messageManager->addErrorMessage(__('Back-in-stock notifications are not available right now.'));
-            return $this->redirectTo($redirect, $referrer);
+            return $this->error(__('Back-in-stock notifications are not available right now.'), $referrer);
         }
 
         if (!$this->formKeyValidator->validate($this->request)) {
-            $this->messageManager->addErrorMessage(__('Your session expired. Please try again.'));
-            return $this->redirectTo($redirect, $referrer);
+            return $this->error(__('Your session expired. Please try again.'), $referrer);
         }
 
         $span = Profiler::start('ETechFlow_BISN_SubscriptionCreate');
@@ -75,21 +78,15 @@ class Create implements HttpPostActionInterface
             $firstName = trim((string) $this->request->getParam('first_name'));
 
             if ($productId <= 0 || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->messageManager->addErrorMessage(__('Please provide a valid email address.'));
-                return $this->redirectTo($redirect, $referrer);
+                return $this->error(__('Please provide a valid email address.'), $referrer);
             }
 
-            // Confirm product exists (anti-tamper — form fields are POST-supplied)
             try {
                 $product = $this->productRepository->getById($productId);
             } catch (NoSuchEntityException $e) {
-                $this->messageManager->addErrorMessage(__('We could not find the product you tried to subscribe to.'));
-                return $this->redirectTo($redirect, $referrer);
+                return $this->error(__('We could not find the product you tried to subscribe to.'), $referrer);
             }
 
-            // Dedupe check using the unique key (email + product + store + store_filter).
-            // Implementation note: rely on the DB unique constraint to catch true
-            // dupes (race-safe), then handle the exception with a friendlier message.
             $subscription = $this->subscriptionFactory->create();
             $subscription
                 ->setEmail($email)
@@ -103,13 +100,8 @@ class Create implements HttpPostActionInterface
                         : SubscriptionInterface::STATUS_CONFIRMED
                 )
                 ->setSubscribedAt(date('Y-m-d H:i:s'))
-                ->setConfirmedAt(
-                    $this->config->isDoubleOptInEnabled()
-                        ? null
-                        : date('Y-m-d H:i:s')
-                );
+                ->setConfirmedAt($this->config->isDoubleOptInEnabled() ? null : date('Y-m-d H:i:s'));
 
-            // Link to customer if they're signed in (lets them manage in account)
             if ($this->customerSession->isLoggedIn()) {
                 $customerId = (int) $this->customerSession->getCustomerId();
                 if ($customerId > 0) {
@@ -120,22 +112,16 @@ class Create implements HttpPostActionInterface
             try {
                 $this->subscriptionRepository->save($subscription);
             } catch (\Exception $e) {
-                // Heuristic: DB unique constraint violation → "already subscribed".
-                // Any other failure → log and show generic error.
                 if (stripos($e->getMessage(), 'unique') !== false
                     || stripos($e->getMessage(), 'duplicate') !== false) {
-                    $this->messageManager->addSuccessMessage(__("You're already on the list for this product."));
-                    return $this->redirectTo($redirect, $referrer);
+                    // Already subscribed — treat as success from the customer's POV.
+                    return $this->success(__("You're already on the list for this product."), $referrer);
                 }
                 $this->logger->warning('ETechFlow_BISN subscribe failed', ['exception' => $e->getMessage()]);
-                $this->messageManager->addErrorMessage(__('Something went wrong — please try again later.'));
-                return $this->redirectTo($redirect, $referrer);
+                return $this->error(__('Something went wrong — please try again later.'), $referrer);
             }
 
             if ($this->config->isDoubleOptInEnabled()) {
-                // Best-effort confirm-email send. If SMTP fails right now we
-                // still keep the pending subscription so the customer can
-                // re-click the form later; logging the failure is enough.
                 try {
                     $this->confirmSender->send($subscription);
                 } catch (\Throwable $e) {
@@ -144,23 +130,59 @@ class Create implements HttpPostActionInterface
                         ['exception' => $e->getMessage(), 'subscription_id' => $subscription->getSubscriptionId()]
                     );
                 }
-                $this->messageManager->addSuccessMessage(
-                    __("Thanks — please check your inbox to confirm your subscription.")
-                );
-            } else {
-                $this->messageManager->addSuccessMessage(
-                    __("You're on the list — we'll email you the moment %1 is back in stock.", $product->getName())
+                return $this->success(
+                    __("Thanks — please check your inbox to confirm your subscription."),
+                    $referrer
                 );
             }
-            return $this->redirectTo($redirect, $referrer);
+
+            return $this->success(
+                __("You're on the list — we'll email you the moment %1 is back in stock.", $product->getName()),
+                $referrer
+            );
         } finally {
             Profiler::stop($span);
         }
     }
 
-    private function redirectTo(Redirect $redirect, string $url): Redirect
+    /**
+     * Did the client ask for a JSON response (AJAX/fetch)?
+     */
+    private function wantsJson(): bool
     {
-        $redirect->setUrl($url);
-        return $redirect;
+        if ($this->request->isXmlHttpRequest()) {
+            return true;
+        }
+        $accept = (string) $this->request->getHeader('Accept');
+        return str_contains($accept, 'application/json');
+    }
+
+    /**
+     * Success response — JSON envelope for AJAX, flash-message + redirect for plain POST.
+     */
+    private function success($message, string $referrer): ResultInterface
+    {
+        if ($this->wantsJson()) {
+            $json = $this->jsonFactory->create();
+            $json->setData(['success' => true, 'message' => (string) $message]);
+            return $json;
+        }
+        $this->messageManager->addSuccessMessage($message);
+        return $this->redirectFactory->create()->setUrl($referrer);
+    }
+
+    /**
+     * Error response — same shape pattern.
+     */
+    private function error($message, string $referrer): ResultInterface
+    {
+        if ($this->wantsJson()) {
+            $json = $this->jsonFactory->create();
+            $json->setHttpResponseCode(400);
+            $json->setData(['success' => false, 'message' => (string) $message]);
+            return $json;
+        }
+        $this->messageManager->addErrorMessage($message);
+        return $this->redirectFactory->create()->setUrl($referrer);
     }
 }

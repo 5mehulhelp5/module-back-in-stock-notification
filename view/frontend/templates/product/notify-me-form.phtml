@@ -76,3 +76,80 @@ $doubleOptIn = $block->isDoubleOptInEnabled();
         <?php endif; ?>
     </form>
 </div>
+
+<script>
+/*
+ * Progressive enhancement: AJAX-submit via fetch() so the customer
+ * doesn't full-reload the PDP. Falls back to plain HTML POST when
+ * JavaScript is disabled (the <form> still has action + method=post).
+ *
+ * No jQuery, no Alpine, no Magewire — vanilla fetch() works on every
+ * browser Magento supports (Safari 11+, Chrome / Edge / Firefox last
+ * 2 versions). Works identically on Luma + Hyvä + Hyvä Checkout.
+ */
+(function () {
+    var wrap = document.querySelector('[data-element="etechflow-bisn-notify-form"]');
+    if (!wrap) return;
+    var form = wrap.querySelector('[data-element="etechflow-bisn-form"]');
+    if (!form || typeof window.fetch !== 'function') return;
+
+    function showMessage(text, ok) {
+        wrap.innerHTML = '<div style="padding:12px 14px; border-radius:4px;'
+            + (ok ? ' background:#e8f5e8; color:#1f6f1f;' : ' background:#fdecea; color:#a02818;')
+            + '">' + text + '</div>';
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.dataset.originalLabel = btn.textContent;
+            btn.textContent = '...';
+        }
+        // Remove any prior inline error
+        var prior = form.querySelector('.etechflow-bisn-inline-error');
+        if (prior) prior.parentNode.removeChild(prior);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(function (response) {
+            return response.json().then(function (data) {
+                return { ok: response.ok, data: data };
+            });
+        })
+        .then(function (result) {
+            if (result.ok && result.data && result.data.success) {
+                showMessage(result.data.message || 'You\'re on the list.', true);
+            } else {
+                var msg = (result.data && result.data.message) || 'Please try again.';
+                var err = document.createElement('div');
+                err.className = 'etechflow-bisn-inline-error';
+                err.style.cssText = 'color:#a02818; margin-top:8px; font-size:0.9em;';
+                err.textContent = msg;
+                form.insertBefore(err, btn);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = btn.dataset.originalLabel || 'Notify me';
+                }
+            }
+        })
+        .catch(function () {
+            // Network error — re-enable the form so the user can retry
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalLabel || 'Notify me';
+            }
+            var err = document.createElement('div');
+            err.className = 'etechflow-bisn-inline-error';
+            err.style.cssText = 'color:#a02818; margin-top:8px; font-size:0.9em;';
+            err.textContent = 'Network problem — please try again.';
+            form.insertBefore(err, btn);
+        });
+    });
+})();
+</script>

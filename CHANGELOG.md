@@ -4,6 +4,43 @@ All notable changes to this module. Adheres to [Semantic Versioning](https://sem
 
 ---
 
+## [1.0.2] — 2026-05-20 — Inline-AJAX subscribe (progressive enhancement)
+
+Removes the full-page reload on subscribe. Customer types email, clicks Notify me, the form swaps inline to a "You're on the list" success card. No spinner, no flash-message round-trip.
+
+### Added
+
+- **Inline-AJAX submit via vanilla `fetch()`** — no jQuery, no Alpine, no Magewire dependency. Works on every browser Magento officially supports (Safari 11+, Chrome / Edge / Firefox last 2 versions).
+- **Form `data-element` hooks** on the wrapper + form so the script binds reliably without conflicting with anything else on the page.
+- **Inline-error rendering** — invalid email / form-key expired / dedupe message all render inline next to the form, not as a flash message.
+
+### Changed
+
+- **`Controller/Subscription/Create.php` is now dual-mode**: when the request includes `X-Requested-With: XMLHttpRequest` or `Accept: application/json`, returns a JSON envelope (`{success, message}`). Otherwise falls back to the v1.0.1 flash-message + redirect-to-referrer flow. Same persistence + dedupe + double-opt-in logic, only the response shape differs.
+
+### Backwards compatibility
+
+- **JavaScript disabled** → plain HTML POST + redirect still works (the `<form>` still has `action` + `method="post"`).
+- **AJAX endpoint** is the same URL — no new routes, no extra controllers, no breaking changes for anyone who built integrations against v1.0.0/1.0.1's URL.
+- No new DB schema, no new admin config, no new dependencies. Drop-in replacement.
+
+### Theme compatibility
+
+- **Luma**: native browser `fetch()` available — works.
+- **Hyvä Theme**: `fetch()` available — works. Inline JS doesn't conflict with Alpine or Hyvä's own scripts.
+- **Hyvä Checkout**: BISN's form is on the PDP, not the checkout, so this is irrelevant — but the same form works if a Hyvä Checkout merchant decides to display it inside the checkout for any reason.
+
+### Migration
+
+```
+composer update etechflow/module-back-in-stock-notification
+bin/magento cache:flush
+```
+
+No `setup:upgrade`, no `setup:di:compile` needed — only template + controller changed, no schema or DI tree changes. Customers upgrading from v1.0.1 just need to flush cache.
+
+---
+
 ## [1.0.1] — 2026-05-20 — Real-install hotfix (3 bugs caught by live Magento 2.4.8 test)
 
 Caught the moment we ran this module against a real Magento install for the first time. None of these would have shown up in `php -l` / composer-resolution / XSD-validation — only `setup:upgrade` and a full end-to-end run surface them.
