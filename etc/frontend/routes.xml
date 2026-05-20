@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+    <router id="standard">
+        <!--
+            Frontend route etechflow_bisn → exposed paths:
+              /etechflow_bisn/subscription/create     (POST  — submit from PDP)
+              /etechflow_bisn/subscription/unsubscribe?token=<token>  (GET — one-click)
+              /etechflow_bisn/subscription/confirm?token=<token>      (GET — double-opt-in confirm)
+              /etechflow_bisn/customer/subscriptions                  (GET — account page)
+        -->
+        <route id="etechflow_bisn" frontName="etechflow_bisn">
+            <module name="ETechFlow_BackInStockNotification"/>
+        </route>
+    </router>
+</config>

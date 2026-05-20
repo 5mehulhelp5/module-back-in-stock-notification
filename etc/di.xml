@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <preference for="ETechFlow\BackInStockNotification\Api\Data\SubscriptionInterface"
+                type="ETechFlow\BackInStockNotification\Model\Subscription"/>
+
+    <preference for="ETechFlow\BackInStockNotification\Api\SubscriptionRepositoryInterface"
+                type="ETechFlow\BackInStockNotification\Model\SubscriptionRepository"/>
+
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="etechflow_bisn_verify"
+                      xsi:type="object">ETechFlow\BackInStockNotification\Console\Command\VerifyCommand</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

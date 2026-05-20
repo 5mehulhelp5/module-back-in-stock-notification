@@ -1,0 +1,52 @@
+<?php
+/**
+ * @var \ETechFlow\BackInStockNotification\Block\Customer\SubscriptionList $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+
+$subscriptions = $block->getSubscriptions();
+?>
+<div class="block etechflow-bisn-subscriptions">
+    <div class="block-title">
+        <strong><?= $escaper->escapeHtml(__('Back-in-stock subscriptions')); ?></strong>
+    </div>
+    <div class="block-content">
+        <?php if (empty($subscriptions)): ?>
+            <p><?= $escaper->escapeHtml(__("You're not currently subscribed to any out-of-stock products.")); ?></p>
+        <?php else: ?>
+            <table class="data table" style="width:100%;">
+                <thead>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('Product')); ?></th>
+                    <th><?= $escaper->escapeHtml(__('Subscribed')); ?></th>
+                    <th><?= $escaper->escapeHtml(__('Status')); ?></th>
+                    <th><?= $escaper->escapeHtml(__('Action')); ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($subscriptions as $sub): ?>
+                    <tr>
+                        <td>
+                            <a href="<?= $escaper->escapeUrl($block->getProductUrl((int) $sub->getProductId())); ?>">
+                                <?= $escaper->escapeHtml($block->getProductName((int) $sub->getProductId())); ?>
+                            </a>
+                        </td>
+                        <td>
+                            <?= $escaper->escapeHtml($sub->getSubscribedAt() ?? ''); ?>
+                        </td>
+                        <td>
+                            <?= $escaper->escapeHtml(ucfirst($sub->getStatus())); ?>
+                        </td>
+                        <td>
+                            <a href="<?= $escaper->escapeUrl($block->getUnsubscribeUrl($sub->getUnsubscribeToken())); ?>"
+                               class="action delete">
+                                <?= $escaper->escapeHtml(__('Unsubscribe')); ?>
+                            </a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+</div>

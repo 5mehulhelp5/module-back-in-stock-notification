@@ -1,0 +1,44 @@
+{
+    "name": "etechflow/module-back-in-stock-notification",
+    "description": "Back-in-stock notification for Magento 2. Customer subscribes on out-of-stock product pages, gets emailed when stock returns. Anonymous + customer-linked subscriptions, multi-store aware, one-click unsubscribe, queued/rate-limited delivery. Standalone — works without any other ETechFlow module — and integrates richer when paired with NDE / BED / ISP.",
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "eTechFlow Pvt. Ltd.",
+            "email": "info@etechflow.com",
+            "homepage": "https://etechflow.com"
+        }
+    ],
+    "support": {
+        "email": "info@etechflow.com",
+        "source": "https://etechflow.com"
+    },
+    "require": {
+        "php": "~8.1.0||~8.2.0||~8.3.0||~8.4.0",
+        "magento/framework": "^103.0||^104.0",
+        "magento/module-backend": "^102.0||^103.0",
+        "magento/module-catalog": "^104.0||^105.0",
+        "magento/module-catalog-inventory": "^100.4||^101.0",
+        "magento/module-customer": "^103.0||^104.0",
+        "magento/module-store": "^101.1||^102.0",
+        "magento/module-config": "^101.2||^102.0",
+        "magento/module-email": "^101.1||^102.0",
+        "magento/module-cron": "^100.4||^101.0",
+        "magento/module-ui": "^101.2||^102.0"
+    },
+    "suggest": {
+        "etechflow/module-next-day-eligibility": "Optional. When installed, 'back in stock' uses NDE's eligibility rules engine — so a product that comes back in stock but is still next-day-ineligible (e.g., supplier drop-ship rule) doesn't fire spurious notifications.",
+        "etechflow/module-backorder-eta-display": "Optional. When installed, restock-on-backorder notifications include BED's per-product ETA in the email body — 'Back on Jun 12!' instead of just 'Back in stock!'.",
+        "etechflow/module-in-store-pickup": "Optional. When installed, customers can subscribe to a specific pickup-store's stock — 'notify me when back at my preferred store'."
+    },
+    "autoload": {
+        "psr-4": {
+            "ETechFlow\\BackInStockNotification\\": ""
+        },
+        "files": [
+            "registration.php"
+        ]
+    }
+}

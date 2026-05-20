@@ -1,0 +1,24 @@
+eTechFlow Proprietary License — ETechFlow Back-in-Stock Notification
+====================================================================
+
+Copyright (c) 2026 eTechFlow Pvt. Ltd. All rights reserved.
+
+This software is licensed under a per-installation commercial license.
+Each domain you intend to use this module on requires its own license
+key, issued by eTechFlow. Local development hosts (localhost, .test,
+.local, RFC 1918 IPs, staging./dev./qa. subdomains, ngrok/loca.lt
+tunnels, *.magento.cloud) auto-bypass licensing.
+
+You MAY:
+- Install and use this module on the host(s) covered by your licence
+- Modify the code for your own deployment
+- Use unlimited development and staging copies of your production
+  license (covered by the dev-host bypass)
+
+You MAY NOT:
+- Redistribute this module to third parties without a separate
+  reseller agreement
+- Remove or alter the license validation logic
+- Use this module on production hosts not covered by your license
+
+For licensing inquiries, please contact info@etechflow.com.

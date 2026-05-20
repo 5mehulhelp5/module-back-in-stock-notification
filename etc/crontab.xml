@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <group id="default">
+        <!--
+            Drains the notification queue every 5 minutes. Pulls (rate_limit × 5)
+            rows per run, so the default 60 emails/min → 300 emails/run.
+
+            On a fresh stock restock with 5,000 subscribers, this run-pattern
+            takes ~17 cron cycles (~1.5 hours) to clear — exactly the
+            rate-limit behaviour we want to protect SMTP from.
+        -->
+        <job name="etechflow_bisn_queue_consumer"
+             instance="ETechFlow\BackInStockNotification\Cron\QueueConsumer"
+             method="execute">
+            <schedule>*/5 * * * *</schedule>
+        </job>
+    </group>
+</config>

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
+    <acl>
+        <resources>
+            <resource id="Magento_Backend::admin">
+                <resource id="Magento_Backend::stores">
+                    <resource id="Magento_Backend::stores_settings">
+                        <resource id="Magento_Config::config">
+                            <resource id="ETechFlow_BackInStockNotification::config"
+                                      title="ETechFlow Back-in-Stock Notification"
+                                      sortOrder="50"/>
+                        </resource>
+                    </resource>
+                </resource>
+                <resource id="Magento_Sales::operations">
+                    <resource id="ETechFlow_BackInStockNotification::subscriptions"
+                              title="ETechFlow BISN — Subscriptions"
+                              sortOrder="50">
+                        <resource id="ETechFlow_BackInStockNotification::subscriptions_delete"
+                                  title="Delete subscriptions"/>
+                        <resource id="ETechFlow_BackInStockNotification::subscriptions_notify_now"
+                                  title="Force-notify subscriptions (bypass queue)"/>
+                    </resource>
+                </resource>
+            </resource>
+        </resources>
+    </acl>
+</config>

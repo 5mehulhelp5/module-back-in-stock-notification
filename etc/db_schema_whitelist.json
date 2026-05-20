@@ -1,0 +1,54 @@
+{
+    "etechflow_bisn_subscription": {
+        "column": {
+            "subscription_id": true,
+            "customer_id": true,
+            "email": true,
+            "first_name": true,
+            "product_id": true,
+            "store_id": true,
+            "store_filter_id": true,
+            "status": true,
+            "unsubscribe_token": true,
+            "subscribed_at": true,
+            "confirmed_at": true,
+            "notified_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ETF_BISN_SUB_UNQ_EMAIL_PROD_STORE_FILTER": true,
+            "ETF_BISN_SUB_FK_PRODUCT": true,
+            "ETF_BISN_SUB_FK_CUSTOMER": true,
+            "ETF_BISN_SUB_FK_STORE": true
+        },
+        "index": {
+            "ETF_BISN_SUB_IDX_PRODUCT_STORE_STATUS": true,
+            "ETF_BISN_SUB_IDX_CUSTOMER": true,
+            "ETF_BISN_SUB_IDX_TOKEN": true,
+            "ETF_BISN_SUB_IDX_STATUS_SUBSCRIBED_AT": true
+        }
+    },
+    "etechflow_bisn_notification_queue": {
+        "column": {
+            "queue_id": true,
+            "subscription_id": true,
+            "product_id": true,
+            "store_id": true,
+            "status": true,
+            "attempts": true,
+            "last_error": true,
+            "scheduled_at": true,
+            "sent_at": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ETF_BISN_QUE_FK_SUBSCRIPTION": true,
+            "ETF_BISN_QUE_FK_PRODUCT": true
+        },
+        "index": {
+            "ETF_BISN_QUE_IDX_STATUS_SCHEDULED": true,
+            "ETF_BISN_QUE_IDX_SUBSCRIPTION": true
+        }
+    }
+}

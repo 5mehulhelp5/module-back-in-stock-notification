@@ -1,0 +1,48 @@
+<!--@subject {{trans "%product_name is back in stock!" product_name=$product_name}} @-->
+<!--@vars {
+"var product_name":"Product Name",
+"var product_url":"Product URL",
+"var first_name":"Subscriber First Name",
+"var unsubscribe_url":"One-click unsubscribe URL",
+"var store.frontend_name":"Store Name"
+} @-->
+
+{{template config_path="design/email/header_template"}}
+
+<table style="width:100%; max-width:600px; margin:0 auto; font-family:Helvetica,Arial,sans-serif;">
+    <tr>
+        <td style="padding:24px 0;">
+            {{depend first_name}}
+            <p>{{trans "Hi %first_name," first_name=$first_name}}</p>
+            {{/depend}}
+            {{ifnot first_name}}
+            <p>{{trans "Good news,"}}</p>
+            {{/ifnot}}
+
+            <p style="font-size:1.1em;">
+                {{trans "<strong>%product_name</strong> is back in stock at %store_name." product_name=$product_name store_name=$store.frontend_name|raw}}
+            </p>
+
+            <p>
+                {{trans "Click the button below to go straight to the product page — stock can disappear quickly when it comes back."}}
+            </p>
+
+            <p style="text-align:center; margin:32px 0;">
+                <a href="{{var product_url}}"
+                   style="background:#1979c3; color:#fff; padding:12px 24px; text-decoration:none; border-radius:4px; display:inline-block;">
+                    {{trans "View %product_name" product_name=$product_name}}
+                </a>
+            </p>
+
+            <p style="font-size:0.9em; color:#666; margin-top:32px;">
+                {{trans "You're receiving this because you subscribed to a back-in-stock alert."}}
+                <br>
+                <a href="{{var unsubscribe_url}}" style="color:#666;">
+                    {{trans "Unsubscribe (one click — no login required)"}}
+                </a>
+            </p>
+        </td>
+    </tr>
+</table>
+
+{{template config_path="design/email/footer_template"}}

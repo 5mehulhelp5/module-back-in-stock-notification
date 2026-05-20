@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!--
+        Fires on every stock_item save. Our observer is cheap on the
+        non-restock path (checks license, then qty-transition, then bails)
+        so a busy store taking thousands of stock updates per hour stays
+        unaffected.
+    -->
+    <event name="cataloginventory_stock_item_save_after">
+        <observer name="etechflow_bisn_stock_save"
+                  instance="ETechFlow\BackInStockNotification\Observer\StockSaveObserver"/>
+    </event>
+</config>

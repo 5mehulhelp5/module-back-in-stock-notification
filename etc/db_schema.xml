@@ -1,0 +1,190 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+
+    <!--
+        etechflow_bisn_subscription
+        ─────────────────────────────────────────────────────────────────
+        One row per (product, customer-or-email, store) the customer wants
+        to be notified about. Anonymous (email-only) and customer-linked
+        subscriptions both live here — customer_id is nullable.
+
+        A customer subscribing while logged-out then registering an account
+        with the same email is auto-linked at customer-save time
+        (Plugin/Customer/AutoLinkSubscriptionsPlugin in Phase 2).
+
+        Multi-store: store_id is part of the unique key so the same product
+        can have separate subscription lists per store.
+
+        unsubscribe_token: signed random token included in the notification
+        email so one-click unsubscribe (RFC 8058) can validate without
+        requiring login.
+    -->
+    <table name="etechflow_bisn_subscription" resource="default" engine="innodb"
+           comment="ETechFlow BISN — back-in-stock subscriptions">
+
+        <column xsi:type="int" name="subscription_id" padding="10" unsigned="true" nullable="false" identity="true"
+                comment="Primary key"/>
+
+        <column xsi:type="int" name="customer_id" padding="10" unsigned="true" nullable="true" identity="false"
+                comment="customer_entity.entity_id when logged-in subscriber; NULL for guests"/>
+
+        <column xsi:type="varchar" name="email" length="255" nullable="false"
+                comment="Subscriber email (validated; lower-cased on save)"/>
+
+        <column xsi:type="varchar" name="first_name" length="120" nullable="true"
+                comment="Optional friendly name from the subscribe form"/>
+
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" identity="false"
+                comment="catalog_product_entity.entity_id"/>
+
+        <column xsi:type="smallint" name="store_id" padding="5" unsigned="true" nullable="false" identity="false"
+                comment="store_id the subscription was created on"/>
+
+        <column xsi:type="int" name="store_filter_id" padding="10" unsigned="true" nullable="true" identity="false"
+                comment="When ISP integration is on, links to etechflow_isp_store.store_id for per-pickup-store subs; NULL = any-stock subscription"/>
+
+        <column xsi:type="varchar" name="status" length="20" nullable="false" default="pending"
+                comment="pending | confirmed | notified | cancelled | expired"/>
+
+        <column xsi:type="varchar" name="unsubscribe_token" length="64" nullable="false"
+                comment="Signed random token used for one-click unsubscribe (RFC 8058)"/>
+
+        <column xsi:type="timestamp" name="subscribed_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="When the subscription was created"/>
+
+        <column xsi:type="timestamp" name="confirmed_at" on_update="false" nullable="true"
+                comment="When double-opt-in was confirmed (if enabled); NULL otherwise"/>
+
+        <column xsi:type="timestamp" name="notified_at" on_update="false" nullable="true"
+                comment="When the back-in-stock email was sent; NULL = still pending"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="subscription_id"/>
+        </constraint>
+
+        <!--
+            Prevent dupe subscriptions: same person, same product, same store,
+            same per-store filter. Use (email + product + store + store_filter)
+            as the unique key — covers anonymous + customer cases uniformly.
+        -->
+        <constraint xsi:type="unique" referenceId="ETF_BISN_SUB_UNQ_EMAIL_PROD_STORE_FILTER">
+            <column name="email"/>
+            <column name="product_id"/>
+            <column name="store_id"/>
+            <column name="store_filter_id"/>
+        </constraint>
+
+        <index referenceId="ETF_BISN_SUB_IDX_PRODUCT_STORE_STATUS" indexType="btree"
+               comment="Hot lookup: 'how many active subs for product X in store Y' — used by the StockSaveObserver">
+            <column name="product_id"/>
+            <column name="store_id"/>
+            <column name="status"/>
+        </index>
+
+        <index referenceId="ETF_BISN_SUB_IDX_CUSTOMER" indexType="btree"
+               comment="Customer 'My Subscriptions' page lookup">
+            <column name="customer_id"/>
+        </index>
+
+        <index referenceId="ETF_BISN_SUB_IDX_TOKEN" indexType="btree"
+               comment="One-click unsubscribe lookup by token">
+            <column name="unsubscribe_token"/>
+        </index>
+
+        <index referenceId="ETF_BISN_SUB_IDX_STATUS_SUBSCRIBED_AT" indexType="btree"
+               comment="Auto-expiry cron: find rows older than N days with status=pending">
+            <column name="status"/>
+            <column name="subscribed_at"/>
+        </index>
+
+        <constraint xsi:type="foreign" referenceId="ETF_BISN_SUB_FK_PRODUCT"
+                    table="etechflow_bisn_subscription" column="product_id"
+                    referenceTable="catalog_product_entity" referenceColumn="entity_id"
+                    onDelete="CASCADE"/>
+
+        <constraint xsi:type="foreign" referenceId="ETF_BISN_SUB_FK_CUSTOMER"
+                    table="etechflow_bisn_subscription" column="customer_id"
+                    referenceTable="customer_entity" referenceColumn="entity_id"
+                    onDelete="SET NULL"/>
+
+        <constraint xsi:type="foreign" referenceId="ETF_BISN_SUB_FK_STORE"
+                    table="etechflow_bisn_subscription" column="store_id"
+                    referenceTable="store" referenceColumn="store_id"
+                    onDelete="CASCADE"/>
+    </table>
+
+
+    <!--
+        etechflow_bisn_notification_queue
+        ─────────────────────────────────────────────────────────────────
+        Decouples "stock came back" from "email was sent". When the
+        StockSaveObserver detects qty going 0 → positive, it enqueues a row
+        here for every matching subscription rather than sending inline.
+
+        Why a separate table:
+        1. A popular SKU restocking can have 5,000+ subscribers — sending
+           inline blocks the stock-save save() call, breaking bulk imports.
+        2. SMTP rate limits — we batch via cron at a configurable rate.
+        3. Failures: a transient SMTP error retries up to 3 attempts.
+        4. Audit trail: who got notified, when, success/fail per attempt.
+    -->
+    <table name="etechflow_bisn_notification_queue" resource="default" engine="innodb"
+           comment="ETechFlow BISN — pending back-in-stock notifications">
+
+        <column xsi:type="int" name="queue_id" padding="10" unsigned="true" nullable="false" identity="true"
+                comment="Primary key"/>
+
+        <column xsi:type="int" name="subscription_id" padding="10" unsigned="true" nullable="false" identity="false"
+                comment="FK to etechflow_bisn_subscription"/>
+
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" identity="false"
+                comment="Denormalised for index-only lookups in the consumer cron"/>
+
+        <column xsi:type="smallint" name="store_id" padding="5" unsigned="true" nullable="false" identity="false"
+                comment="Denormalised for index-only lookups"/>
+
+        <column xsi:type="varchar" name="status" length="20" nullable="false" default="queued"
+                comment="queued | sending | sent | failed | cancelled"/>
+
+        <column xsi:type="smallint" name="attempts" padding="5" unsigned="true" nullable="false" default="0"
+                comment="Number of send attempts; failed-3 → status=failed"/>
+
+        <column xsi:type="text" name="last_error" nullable="true"
+                comment="Last SMTP error message if attempts > 0 — surfaced in admin grid"/>
+
+        <column xsi:type="timestamp" name="scheduled_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="Earliest time the consumer cron may send this; supports back-off retries"/>
+
+        <column xsi:type="timestamp" name="sent_at" on_update="false" nullable="true"
+                comment="When the email actually went out"/>
+
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="When the row was enqueued"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="queue_id"/>
+        </constraint>
+
+        <index referenceId="ETF_BISN_QUE_IDX_STATUS_SCHEDULED" indexType="btree"
+               comment="Hot consumer-cron query: 'queued rows ready to send'">
+            <column name="status"/>
+            <column name="scheduled_at"/>
+        </index>
+
+        <index referenceId="ETF_BISN_QUE_IDX_SUBSCRIPTION" indexType="btree">
+            <column name="subscription_id"/>
+        </index>
+
+        <constraint xsi:type="foreign" referenceId="ETF_BISN_QUE_FK_SUBSCRIPTION"
+                    table="etechflow_bisn_notification_queue" column="subscription_id"
+                    referenceTable="etechflow_bisn_subscription" referenceColumn="subscription_id"
+                    onDelete="CASCADE"/>
+
+        <constraint xsi:type="foreign" referenceId="ETF_BISN_QUE_FK_PRODUCT"
+                    table="etechflow_bisn_notification_queue" column="product_id"
+                    referenceTable="catalog_product_entity" referenceColumn="entity_id"
+                    onDelete="CASCADE"/>
+    </table>
+
+</schema>

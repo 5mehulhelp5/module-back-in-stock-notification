@@ -1,0 +1,78 @@
+<?php
+/**
+ * @var \ETechFlow\BackInStockNotification\Block\Product\NotifyMeForm $block
+ * @var \Magento\Framework\Escaper $escaper
+ *
+ * Plain-HTML form. Works on Luma and Hyvä without any extra JS — Hyvä's
+ * theme just inherits the standard form styles. Validation is HTML5
+ * native (`required`, `type="email"`); the server-side controller
+ * re-validates.
+ */
+
+if (!$block->canDisplay()) {
+    return;
+}
+
+$productId  = (int) $block->getProductId();
+$storeId    = (int) $block->getStoreId();
+$prefillEmail = $escaper->escapeHtmlAttr($block->getCustomerEmail());
+$prefillName  = $escaper->escapeHtmlAttr($block->getCustomerFirstName());
+$actionUrl  = $escaper->escapeUrl($block->getFormActionUrl());
+$formKey    = $escaper->escapeHtmlAttr($block->getFormKey());
+$doubleOptIn = $block->isDoubleOptInEnabled();
+?>
+<div class="etechflow-bisn-form-wrap"
+     data-element="etechflow-bisn-notify-form"
+     style="margin-top: 16px; padding: 12px; border: 1px solid #d6d6d6; border-radius: 4px; background: #fafafa;">
+    <h3 style="margin: 0 0 8px 0; font-size: 1.05em;">
+        <?= $escaper->escapeHtml(__('Notify me when this product is back in stock')); ?>
+    </h3>
+    <p style="margin: 0 0 12px 0; color: #555;">
+        <?= $escaper->escapeHtml(__('Drop your email and we will email you the moment this product is restocked. One-click unsubscribe in every message.')); ?>
+    </p>
+
+    <form action="<?= $actionUrl; ?>"
+          method="post"
+          data-element="etechflow-bisn-form"
+          novalidate="false">
+
+        <input type="hidden" name="form_key" value="<?= $formKey; ?>">
+        <input type="hidden" name="product_id" value="<?= (int) $productId; ?>">
+        <input type="hidden" name="store_id" value="<?= (int) $storeId; ?>">
+
+        <label for="etf-bisn-first-name" style="display:block; margin-bottom:4px;">
+            <?= $escaper->escapeHtml(__('First name (optional)')); ?>
+        </label>
+        <input type="text"
+               id="etf-bisn-first-name"
+               name="first_name"
+               value="<?= $prefillName; ?>"
+               maxlength="120"
+               style="width:100%; padding:6px; margin-bottom:8px;">
+
+        <label for="etf-bisn-email" style="display:block; margin-bottom:4px;">
+            <?= $escaper->escapeHtml(__('Email address')); ?>
+            <span aria-hidden="true" style="color:#c00;">*</span>
+        </label>
+        <input type="email"
+               id="etf-bisn-email"
+               name="email"
+               value="<?= $prefillEmail; ?>"
+               required
+               maxlength="255"
+               autocomplete="email"
+               style="width:100%; padding:6px; margin-bottom:12px;">
+
+        <button type="submit"
+                class="action primary"
+                style="padding: 8px 14px; cursor: pointer;">
+            <?= $escaper->escapeHtml(__('Notify me')); ?>
+        </button>
+
+        <?php if ($doubleOptIn): ?>
+            <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                <?= $escaper->escapeHtml(__('You will receive a confirmation email — click the link inside it to activate your subscription.')); ?>
+            </p>
+        <?php endif; ?>
+    </form>
+</div>

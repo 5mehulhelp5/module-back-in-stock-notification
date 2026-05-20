@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
+    <template id="etechflow_bisn_back_in_stock"
+              label="ETechFlow BISN — Back in stock (to customer)"
+              file="back_in_stock.html"
+              type="html"
+              module="ETechFlow_BackInStockNotification"
+              area="frontend"/>
+    <template id="etechflow_bisn_confirm"
+              label="ETechFlow BISN — Confirm subscription (double opt-in)"
+              file="confirm.html"
+              type="html"
+              module="ETechFlow_BackInStockNotification"
+              area="frontend"/>
+</config>
