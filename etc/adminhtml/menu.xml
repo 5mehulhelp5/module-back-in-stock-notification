@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="ETechFlow_BackInStockNotification::subscriptions"
+             title="Back-in-Stock Subscriptions"
+             module="ETechFlow_BackInStockNotification"
+             sortOrder="50"
+             parent="Magento_Sales::operations"
+             action="etechflow_bisn/subscription/index"
+             resource="ETechFlow_BackInStockNotification::subscriptions"/>
+    </menu>
+</config>

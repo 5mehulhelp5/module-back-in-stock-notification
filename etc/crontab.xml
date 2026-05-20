@@ -15,5 +15,16 @@
              method="execute">
             <schedule>*/5 * * * *</schedule>
         </job>
+
+        <!--
+            Daily expiry of stale subscriptions. Lifetime is admin-configurable
+            (Stores → Configuration → eTechFlow → Back-in-Stock → General →
+            Subscription Lifetime). 0 = never expire (cron returns early).
+        -->
+        <job name="etechflow_bisn_lifetime_expiry"
+             instance="ETechFlow\BackInStockNotification\Cron\LifetimeExpiryCron"
+             method="execute">
+            <schedule>0 3 * * *</schedule>
+        </job>
     </group>
 </config>

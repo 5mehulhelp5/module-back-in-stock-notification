@@ -7,6 +7,7 @@ namespace ETechFlow\BackInStockNotification\Controller\Subscription;
 use ETechFlow\BackInStockNotification\Api\Data\SubscriptionInterface;
 use ETechFlow\BackInStockNotification\Api\SubscriptionRepositoryInterface;
 use ETechFlow\BackInStockNotification\Model\Config;
+use ETechFlow\BackInStockNotification\Model\Notification\ConfirmSender;
 use ETechFlow\BackInStockNotification\Model\Performance\Profiler;
 use ETechFlow\BackInStockNotification\Model\SubscriptionFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -46,6 +47,7 @@ class Create implements HttpPostActionInterface
         private readonly CustomerSession $customerSession,
         private readonly MessageManager $messageManager,
         private readonly UrlInterface $urlBuilder,
+        private readonly ConfirmSender $confirmSender,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -131,6 +133,17 @@ class Create implements HttpPostActionInterface
             }
 
             if ($this->config->isDoubleOptInEnabled()) {
+                // Best-effort confirm-email send. If SMTP fails right now we
+                // still keep the pending subscription so the customer can
+                // re-click the form later; logging the failure is enough.
+                try {
+                    $this->confirmSender->send($subscription);
+                } catch (\Throwable $e) {
+                    $this->logger->warning(
+                        'ETechFlow_BISN confirm email failed (subscription kept pending)',
+                        ['exception' => $e->getMessage(), 'subscription_id' => $subscription->getSubscriptionId()]
+                    );
+                }
                 $this->messageManager->addSuccessMessage(
                     __("Thanks — please check your inbox to confirm your subscription.")
                 );

@@ -16,4 +16,15 @@
             </argument>
         </arguments>
     </type>
+
+    <!--
+        Auto-link anonymous subs to newly-registered customers by email.
+        See Plugin/Customer/AutoLinkSubscriptionsPlugin docblock for the
+        full reasoning.
+    -->
+    <type name="Magento\Customer\Api\AccountManagementInterface">
+        <plugin name="etechflow_bisn_auto_link_subscriptions"
+                type="ETechFlow\BackInStockNotification\Plugin\Customer\AutoLinkSubscriptionsPlugin"
+                sortOrder="100"/>
+    </type>
 </config>

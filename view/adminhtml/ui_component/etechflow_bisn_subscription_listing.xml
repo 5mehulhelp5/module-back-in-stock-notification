@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">etechflow_bisn_subscription_listing.etechflow_bisn_subscription_listing_data_source</item>
+        </item>
+    </argument>
+
+    <settings>
+        <buttons>
+            <!-- No "New" button — subscriptions are user-created from PDP only -->
+        </buttons>
+        <spinner>etechflow_bisn_subscription_columns</spinner>
+        <deps>
+            <dep>etechflow_bisn_subscription_listing.etechflow_bisn_subscription_listing_data_source</dep>
+        </deps>
+    </settings>
+
+    <dataSource name="etechflow_bisn_subscription_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">subscription_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>ETechFlow_BackInStockNotification::subscriptions</aclResource>
+        <dataProvider class="ETechFlowBisnSubscriptionGridDataProvider"
+                      name="etechflow_bisn_subscription_listing_data_source">
+            <settings>
+                <requestFieldName>subscription_id</requestFieldName>
+                <primaryFieldName>subscription_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filterSearch name="fulltext"/>
+        <filters name="listing_filters"/>
+        <massaction name="listing_massaction">
+            <action name="delete">
+                <settings>
+                    <type>delete</type>
+                    <label translate="true">Delete</label>
+                    <url path="etechflow_bisn/subscription/massDelete"/>
+                    <confirm>
+                        <title translate="true">Delete subscriptions</title>
+                        <message translate="true">Delete the selected subscription(s)? This removes the audit row too.</message>
+                    </confirm>
+                </settings>
+            </action>
+            <action name="cancel">
+                <settings>
+                    <type>cancel</type>
+                    <label translate="true">Cancel (keep audit row)</label>
+                    <url path="etechflow_bisn/subscription/massCancel"/>
+                    <confirm>
+                        <title translate="true">Cancel subscriptions</title>
+                        <message translate="true">Mark the selected subscription(s) as cancelled? They will not receive notifications, but the rows remain for audit.</message>
+                    </confirm>
+                </settings>
+            </action>
+            <action name="notify_now">
+                <settings>
+                    <type>notify_now</type>
+                    <label translate="true">Notify now (force-queue)</label>
+                    <url path="etechflow_bisn/subscription/massNotifyNow"/>
+                    <confirm>
+                        <title translate="true">Notify now</title>
+                        <message translate="true">Force-queue back-in-stock emails for the selected subscription(s)? They will send on the next cron tick (5 min).</message>
+                    </confirm>
+                </settings>
+            </action>
+        </massaction>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+
+    <columns name="etechflow_bisn_subscription_columns">
+        <selectionsColumn name="ids">
+            <settings>
+                <indexField>subscription_id</indexField>
+            </settings>
+        </selectionsColumn>
+
+        <column name="subscription_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">ID</label>
+                <sorting>desc</sorting>
+            </settings>
+        </column>
+
+        <column name="email">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Email</label>
+            </settings>
+        </column>
+
+        <column name="first_name">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">First name</label>
+            </settings>
+        </column>
+
+        <column name="product_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Product ID</label>
+            </settings>
+        </column>
+
+        <column name="customer_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Customer ID</label>
+            </settings>
+        </column>
+
+        <column name="store_id" component="Magento_Ui/js/grid/columns/select" sortOrder="50">
+            <settings>
+                <options class="Magento\Store\Model\System\Store"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Store View</label>
+            </settings>
+        </column>
+
+        <column name="status" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="ETechFlow\BackInStockNotification\Model\Source\StatusOptions"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Status</label>
+            </settings>
+        </column>
+
+        <column name="subscribed_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <filter>dateRange</filter>
+                <dataType>date</dataType>
+                <label translate="true">Subscribed at</label>
+            </settings>
+        </column>
+
+        <column name="notified_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <filter>dateRange</filter>
+                <dataType>date</dataType>
+                <label translate="true">Notified at</label>
+            </settings>
+        </column>
+
+        <actionsColumn name="actions" class="ETechFlow\BackInStockNotification\Ui\Component\Listing\Column\SubscriptionActions">
+            <settings>
+                <indexField>subscription_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

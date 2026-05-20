@@ -11,8 +11,11 @@ use ETechFlow\BackInStockNotification\Model\Adapter\IspStoreAdapter;
 use ETechFlow\BackInStockNotification\Model\Adapter\NdeEligibilityAdapter;
 use ETechFlow\BackInStockNotification\Model\Config;
 use ETechFlow\BackInStockNotification\Model\LicenseValidator;
+use ETechFlow\BackInStockNotification\Cron\LifetimeExpiryCron;
+use ETechFlow\BackInStockNotification\Cron\QueueConsumer;
 use ETechFlow\BackInStockNotification\Model\NotificationQueueRepository;
 use ETechFlow\BackInStockNotification\Model\Notification\BackInStockSender;
+use ETechFlow\BackInStockNotification\Model\Notification\ConfirmSender;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\App\State as AppState;
 use Symfony\Component\Console\Command\Command;
@@ -40,6 +43,9 @@ class VerifyCommand extends Command
         private readonly SubscriptionRepositoryInterface $subscriptionRepository,
         private readonly NotificationQueueRepository $queueRepository,
         private readonly BackInStockSender $sender,
+        private readonly ConfirmSender $confirmSender,
+        private readonly QueueConsumer $queueConsumer,
+        private readonly LifetimeExpiryCron $lifetimeExpiry,
         private readonly NdeEligibilityAdapter $ndeAdapter,
         private readonly BedEtaAdapter $bedAdapter,
         private readonly IspStoreAdapter $ispAdapter
@@ -127,6 +133,18 @@ class VerifyCommand extends Command
 
         $this->check($output, 'BackInStockSender resolves via DI', function () {
             return get_class($this->sender);
+        });
+
+        $this->check($output, 'ConfirmSender resolves via DI', function () {
+            return get_class($this->confirmSender);
+        });
+
+        $this->check($output, 'QueueConsumer cron resolves via DI', function () {
+            return get_class($this->queueConsumer);
+        });
+
+        $this->check($output, 'LifetimeExpiryCron resolves via DI', function () {
+            return get_class($this->lifetimeExpiry);
         });
 
         $this->check($output, 'NdeEligibilityAdapter resolves via DI', function () {

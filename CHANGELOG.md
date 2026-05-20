@@ -4,7 +4,7 @@ All notable changes to this module. Adheres to [Semantic Versioning](https://sem
 
 ---
 
-## [1.0.0] — TBD — Customer subscribes, gets emailed when stock returns
+## [1.0.0] — 2026-05-20 — Customer subscribes, gets emailed when stock returns
 
 First commercial release. Solves the universal "customer wanted the product, you were OOS, you lost the sale" problem.
 
@@ -49,9 +49,21 @@ Every existing module on the marketplace shares one or more of these footguns:
 - `etc/email_templates.xml` — registers `etechflow_bisn_back_in_stock` template. Default template at `view/frontend/email/back_in_stock.html`.
 
 **Admin**
-- Magento UI Component listing grid: Subscription Status, Product, Customer/Email, Store, Subscribed At, Notified At, Status.
-- Mass actions: Delete, Notify Now (force-send to bypass queue), Cancel.
-- Per-product stats column.
+- Magento UI Component listing grid at **Sales → Operations → Back-in-Stock Subscriptions**: ID, Email, First Name, Product ID, Customer ID, Store View, Status (filterable), Subscribed At, Notified At, per-row Actions (Delete / Cancel).
+- Mass actions: **Delete** (removes audit row), **Cancel** (keeps audit row, blocks future notifications), **Notify Now** (force-queues notification — bypasses the qty 0→positive trigger).
+- Two ACL resources: `subscriptions_delete` (Delete + Cancel) and `subscriptions_notify_now` (force-queue) so you can grant view-only access to most admin roles.
+- Source model for the Status column dropdown.
+
+**Auto-Link Anonymous Subscriptions**
+- `Plugin/Customer/AutoLinkSubscriptionsPlugin` — `after`-plugin on `Magento\Customer\Api\AccountManagementInterface::createAccount`. When a guest who previously subscribed by email later registers with the same email, their pending subscriptions auto-link to the new customer (so they appear in My Account → Subscriptions immediately).
+- Defensive: never blocks customer creation. Logs failures and continues.
+
+**Lifetime Expiry**
+- `Cron/LifetimeExpiryCron` — runs daily at 03:00. Updates `status` from `pending|confirmed` → `expired` for rows older than the admin-configurable lifetime (default 180 days, 0 = never expire). Single UPDATE query — index-only on `(status, subscribed_at)`. Logs the affected row count when nonzero.
+
+**Double Opt-In Confirmation Email**
+- `Model/Notification/ConfirmSender` — sends the confirmation email when the admin "Require Double Opt-In" toggle is on. Best-effort — if SMTP fails, the pending subscription stays in DB so the customer can re-trigger from the PDP form.
+- Default template at `view/frontend/email/confirm.html` (configurable via Marketing → Email Templates).
 
 **Optional eTechFlow Suite Adapters**
 - `Model/Adapter/NdeEligibilityAdapter` — when NDE is installed + admin opted in, "in stock" is determined by NDE's `IneligibilityChecker::isEligible()` instead of raw `qty > 0`. Falls back to direct stock check when NDE isn't present.
