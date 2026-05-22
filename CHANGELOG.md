@@ -4,6 +4,27 @@ All notable changes to this module. Adheres to [Semantic Versioning](https://sem
 
 ---
 
+## [1.0.3] — 2026-05-22 — Move admin menu under eTechFlow top-level sidebar
+
+### Changed
+
+- **BISN admin pages relocated to a dedicated "eTechFlow" sidebar entry.** Previously the Subscriptions list lived under `Sales → Operations`. Now it sits in a `Back-in-Stock` column inside a new top-level `eTechFlow` sidebar entry (clusters with other paid-extension vendors above Magento's Stores). Matches the pattern Amasty / Magefan / MageWorx use so merchants can spot paid extensions at a glance.
+- Each eTechFlow module declares the same `eTechFlow::root` + `eTechFlow::settings` + `eTechFlow::configuration` entries — Magento merges by id, so installing N modules still produces exactly one `eTechFlow` sidebar group. No inter-module dependency added; BISN remains standalone.
+
+### Migration
+
+```
+composer update etechflow/module-back-in-stock-notification
+bin/magento setup:upgrade
+bin/magento setup:di:compile
+bin/magento setup:static-content:deploy -f
+bin/magento cache:flush
+```
+
+Admin URL routes unchanged (`etechflow_bisn/subscription/index` still works). No schema or behaviour changes — pure menu-layout adjustment.
+
+---
+
 ## [1.0.2] — 2026-05-20 — Inline-AJAX subscribe (progressive enhancement)
 
 Removes the full-page reload on subscribe. Customer types email, clicks Notify me, the form swaps inline to a "You're on the list" success card. No spinner, no flash-message round-trip.

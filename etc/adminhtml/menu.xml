@@ -2,11 +2,45 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
     <menu>
-        <add id="ETechFlow_BackInStockNotification::subscriptions"
-             title="Back-in-Stock Subscriptions"
+        <!-- Shared eTechFlow top-level — declared identically by every
+             eTechFlow module so Magento merges to one sidebar entry.
+             See reference_etechflow_menu_convention. -->
+        <add id="eTechFlow::root"
+             title="eTechFlow"
              module="ETechFlow_BackInStockNotification"
-             sortOrder="50"
-             parent="Magento_Sales::operations"
+             sortOrder="68"
+             resource="Magento_Backend::admin"/>
+
+        <add id="eTechFlow::settings"
+             title="Settings"
+             module="ETechFlow_BackInStockNotification"
+             sortOrder="500"
+             parent="eTechFlow::root"
+             resource="Magento_Backend::admin"/>
+
+        <add id="eTechFlow::configuration"
+             title="Configuration"
+             module="ETechFlow_BackInStockNotification"
+             sortOrder="10"
+             parent="eTechFlow::settings"
+             action="adminhtml/system_config/edit/section/etechflow_bisn"
+             resource="Magento_Config::config"/>
+
+        <!-- BISN module column. Wrapping the single existing entry inside
+             a column header keeps the mega-menu layout consistent with
+             other eTechFlow modules. -->
+        <add id="ETechFlow_BackInStockNotification::root"
+             title="Back-in-Stock"
+             module="ETechFlow_BackInStockNotification"
+             sortOrder="30"
+             parent="eTechFlow::root"
+             resource="ETechFlow_BackInStockNotification::subscriptions"/>
+
+        <add id="ETechFlow_BackInStockNotification::subscriptions"
+             title="Subscriptions"
+             module="ETechFlow_BackInStockNotification"
+             sortOrder="10"
+             parent="ETechFlow_BackInStockNotification::root"
              action="etechflow_bisn/subscription/index"
              resource="ETechFlow_BackInStockNotification::subscriptions"/>
     </menu>
