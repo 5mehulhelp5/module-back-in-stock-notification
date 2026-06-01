@@ -4,23 +4,27 @@
     <acl>
         <resources>
             <resource id="Magento_Backend::admin">
+                <resource id="Magento_Backend::marketing">
+                    <resource id="ETechFlow_BackInStockNotification::subscriptions"
+                              title="ETechFlow BISN Subscriptions"
+                              translate="title"
+                              sortOrder="55">
+                        <resource id="ETechFlow_BackInStockNotification::subscriptions_delete"
+                                  title="Delete subscriptions"
+                                  translate="title"/>
+                        <resource id="ETechFlow_BackInStockNotification::subscriptions_notify_now"
+                                  title="Force-notify subscriptions"
+                                  translate="title"/>
+                    </resource>
+                </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">
                         <resource id="Magento_Config::config">
                             <resource id="ETechFlow_BackInStockNotification::config"
                                       title="ETechFlow Back-in-Stock Notification"
+                                      translate="title"
                                       sortOrder="50"/>
                         </resource>
-                    </resource>
-                </resource>
-                <resource id="Magento_Sales::operations">
-                    <resource id="ETechFlow_BackInStockNotification::subscriptions"
-                              title="ETechFlow BISN — Subscriptions"
-                              sortOrder="50">
-                        <resource id="ETechFlow_BackInStockNotification::subscriptions_delete"
-                                  title="Delete subscriptions"/>
-                        <resource id="ETechFlow_BackInStockNotification::subscriptions_notify_now"
-                                  title="Force-notify subscriptions (bypass queue)"/>
                     </resource>
                 </resource>
             </resource>

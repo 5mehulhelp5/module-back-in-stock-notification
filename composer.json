@@ -2,7 +2,7 @@
     "name": "etechflow/module-back-in-stock-notification",
     "description": "Back-in-stock notification for Magento 2. Customer subscribes on out-of-stock product pages, gets emailed when stock returns. Anonymous + customer-linked subscriptions, multi-store aware, one-click unsubscribe, queued/rate-limited delivery. Standalone — works without any other ETechFlow module — and integrates richer when paired with NDE / BED / ISP.",
     "type": "magento2-module",
-    "version": "1.0.3",
+    "version": "1.1.0",
     "license": "proprietary",
     "authors": [
         {
@@ -29,9 +29,9 @@
         "magento/module-ui": "^101.2||^102.0"
     },
     "suggest": {
-        "etechflow/module-next-day-eligibility": "Optional. When installed, 'back in stock' uses NDE's eligibility rules engine — so a product that comes back in stock but is still next-day-ineligible (e.g., supplier drop-ship rule) doesn't fire spurious notifications.",
-        "etechflow/module-backorder-eta-display": "Optional. When installed, restock-on-backorder notifications include BED's per-product ETA in the email body — 'Back on Jun 12!' instead of just 'Back in stock!'.",
-        "etechflow/module-in-store-pickup": "Optional. When installed, customers can subscribe to a specific pickup-store's stock — 'notify me when back at my preferred store'."
+        "etechflow/module-next-day-eligibility": "Optional. When installed, 'back in stock' uses NDE's eligibility rules engine.",
+        "etechflow/module-backorder-eta-display": "Optional. When installed, restock-on-backorder notifications include BED's per-product ETA.",
+        "etechflow/module-in-store-pickup": "Optional. When installed, customers can subscribe to a specific pickup-store's stock."
     },
     "autoload": {
         "psr-4": {

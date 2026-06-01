@@ -9,9 +9,7 @@
     </argument>
 
     <settings>
-        <buttons>
-            <!-- No "New" button — subscriptions are user-created from PDP only -->
-        </buttons>
+        
         <spinner>etechflow_bisn_subscription_columns</spinner>
         <deps>
             <dep>etechflow_bisn_subscription_listing.etechflow_bisn_subscription_listing_data_source</dep>
@@ -26,7 +24,7 @@
             <updateUrl path="mui/index/render"/>
         </settings>
         <aclResource>ETechFlow_BackInStockNotification::subscriptions</aclResource>
-        <dataProvider class="ETechFlowBisnSubscriptionGridDataProvider"
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider"
                       name="etechflow_bisn_subscription_listing_data_source">
             <settings>
                 <requestFieldName>subscription_id</requestFieldName>

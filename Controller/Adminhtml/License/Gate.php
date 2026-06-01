@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
-namespace ETechFlow\BackInStockNotification\Controller\Adminhtml\Subscription;
+namespace ETechFlow\BackInStockNotification\Controller\Adminhtml\License;
 
 use ETechFlow\BackInStockNotification\Model\LicenseValidator;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
-use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\View\Result\PageFactory;
 
-class Index extends Action
+class Gate extends Action
 {
-    public const ADMIN_RESOURCE = 'ETechFlow_BackInStockNotification::subscriptions';
+    public const ADMIN_RESOURCE = 'ETechFlow_BackInStockNotification::config';
 
     public function __construct(
         Context $context,
@@ -25,14 +24,13 @@ class Index extends Action
 
     public function execute(): ResultInterface
     {
-        if (!$this->licenseValidator->isValid()) {
-            $redirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
-            return $redirect->setPath('etechflow_bisn/license/gate');
+        if ($this->licenseValidator->isValid()) {
+            $redirect = $this->resultFactory->create(\Magento\Framework\Controller\ResultFactory::TYPE_REDIRECT);
+            return $redirect->setPath('etechflow_bisn/subscription/index');
         }
 
         $page = $this->pageFactory->create();
-        $page->setActiveMenu('ETechFlow_BackInStockNotification::subscriptions');
-        $page->getConfig()->getTitle()->prepend(__('Back-in-Stock Subscriptions'));
+        $page->getConfig()->getTitle()->prepend(__('Back-in-Stock Notification — License Required'));
         return $page;
     }
 }

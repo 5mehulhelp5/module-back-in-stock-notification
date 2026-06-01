@@ -6,119 +6,134 @@
             <label>eTechFlow</label>
         </tab>
 
-        <section id="etechflow_bisn" translate="label" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+        <section id="etechflow_bisn" translate="label" sortOrder="50"
+                 showInDefault="1" showInWebsite="1" showInStore="1">
             <class>separator-top</class>
             <label>Back-in-Stock Notification</label>
             <tab>etechflow</tab>
             <resource>ETechFlow_BackInStockNotification::config</resource>
 
-            <!--
-                LICENSE SECTION
-                ──────────────────────────────────────────────────────────
-                Standard 3-field block: License Key, Bundle License Key,
-                Production Environment toggle. The Bundle key path is
-                shared across every ETechFlow module.
-            -->
-            <group id="license" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+            <!-- LICENSE -->
+            <group id="license" translate="label" sortOrder="10"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>License</label>
-                <field id="license_key" translate="label comment" sortOrder="10" type="obscure"
+                <field id="license_key" translate="label comment" sortOrder="10" type="text"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>License Key</label>
-                    <comment><![CDATA[Per-module key issued by eTechFlow for this host. Leave blank if using a Bundle License Key below.]]></comment>
+                    <comment><![CDATA[Paste your eTechFlow SP-XXXX subscription key. Generated automatically after Stripe payment.]]></comment>
+                </field>
+                <field id="issued_key" translate="label comment" sortOrder="20" type="obscure"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Issued Key (auto)</label>
+                    <comment><![CDATA[Set automatically on first successful validation. Do not edit.]]></comment>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
-                <field id="bundle_license_key" translate="label comment" sortOrder="20" type="obscure"
+                <field id="portal_url" translate="label comment" sortOrder="25" type="text"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>License Portal URL</label>
+                    <comment><![CDATA[eTechFlow licensing portal endpoint. Update when your ngrok URL changes.]]></comment>
+                </field>
+                <field id="bundle_license_key" translate="label comment" sortOrder="30" type="obscure"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Bundle License Key</label>
-                    <comment><![CDATA[Shared key that activates every ETechFlow module installed on this host. Set EITHER this OR the per-module key above.]]></comment>
+                    <comment><![CDATA[Shared key that activates all eTechFlow modules on this host.]]></comment>
                     <config_path>etechflow_bundle/license/license_key</config_path>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
-                <field id="production_environment" translate="label comment" sortOrder="30" type="select"
+                <field id="production_environment" translate="label comment" sortOrder="40" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Production Environment</label>
-                    <comment><![CDATA[Set to No on staging/dev to bypass licensing. Common dev hostnames auto-detect, so this is rarely needed.]]></comment>
+                    <comment><![CDATA[Set to No on dev/staging to bypass licensing.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
 
-            <!--
-                GENERAL SETTINGS
-            -->
-            <group id="general" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <!-- PAYMENT (STRIPE) -->
+            <group id="payment" translate="label" sortOrder="15"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Payment Settings (Stripe)</label>
+                <comment><![CDATA[Enter your Stripe API keys so customers can pay for a license directly from this admin. Keys are encrypted and stored securely.]]></comment>
+                <field id="stripe_secret_key" translate="label comment" sortOrder="10" type="obscure"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Stripe Secret Key</label>
+                    <comment><![CDATA[Your Stripe secret key (sk_test_... or sk_live_...). Found at dashboard.stripe.com/apikeys]]></comment>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="stripe_publishable_key" translate="label comment" sortOrder="20" type="text"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Stripe Publishable Key</label>
+                    <comment><![CDATA[Your Stripe publishable key (pk_test_... or pk_live_...).]]></comment>
+                </field>
+                <field id="stripe_currency" translate="label comment" sortOrder="30" type="text"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Currency</label>
+                    <comment><![CDATA[3-letter ISO currency code, e.g. usd, gbp, eur. Default: usd]]></comment>
+                    <validate>validate-length maximum-length-3</validate>
+                </field>
+            </group>
+
+            <!-- GENERAL -->
+            <group id="general" translate="label" sortOrder="20"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>General Settings</label>
                 <field id="enabled" translate="label comment" sortOrder="10" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Module Enabled</label>
-                    <comment><![CDATA[Turn the whole module on/off without uninstalling. PDP form hides, observer short-circuits.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="email_rate_limit" translate="label comment" sortOrder="20" type="text"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Email Rate Limit (per minute)</label>
-                    <comment><![CDATA[Max notifications sent per minute by the cron consumer. Default 60. Increase to your SMTP limit.]]></comment>
+                    <comment><![CDATA[Max notifications sent per minute. Default 60.]]></comment>
                     <validate>validate-digits validate-greater-than-zero</validate>
                 </field>
                 <field id="subscription_lifetime_days" translate="label comment" sortOrder="30" type="text"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Subscription Lifetime (days)</label>
-                    <comment><![CDATA[Auto-expire unfulfilled subscriptions after this many days. 0 = never expire. Default 180.]]></comment>
+                    <comment><![CDATA[Auto-expire unfulfilled subscriptions. 0 = never.]]></comment>
                     <validate>validate-digits</validate>
                 </field>
                 <field id="double_opt_in" translate="label comment" sortOrder="40" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Require Double Opt-In</label>
-                    <comment><![CDATA[Send a confirmation email after subscribe. Required by some EU jurisdictions.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
 
-            <!--
-                eTechFlow SUITE INTEGRATIONS
-                ──────────────────────────────────────────────────────────
-                These toggles only have an effect when the sibling module
-                is installed. The Config model class_exists()-gates each
-                check so missing siblings can't be falsely enabled.
-            -->
-            <group id="integrations" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+            <!-- SUITE INTEGRATIONS -->
+            <group id="integrations" translate="label" sortOrder="30"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>eTechFlow Suite Integrations</label>
-                <comment><![CDATA[Each toggle only has an effect when the named sibling module is installed.]]></comment>
                 <field id="use_nde_eligibility" translate="label comment" sortOrder="10" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Use NDE Eligibility Rules</label>
-                    <comment><![CDATA["Back in stock" = NDE's IneligibilityChecker says yes, not just qty > 0. Respects drop-ship + supplier mode. Requires ETechFlow_NextDayEligibility.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="use_bed_eta" translate="label comment" sortOrder="20" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Include BED ETA in Email</label>
-                    <comment><![CDATA[Notification email shows BED's per-product ETA when the restock is itself a future backorder. Requires ETechFlow_BackorderEtaDisplay.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="use_isp_per_store" translate="label comment" sortOrder="30" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Allow Per-Pickup-Store Subscriptions</label>
-                    <comment><![CDATA[Customers can subscribe to a specific ISP pickup store's stock, not just global stock. Requires ETechFlow_InStorePickup.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
 
-            <!--
-                NOTIFICATIONS
-            -->
-            <group id="notifications" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+            <!-- NOTIFICATIONS -->
+            <group id="notifications" translate="label" sortOrder="40"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Notifications</label>
                 <field id="email_sender" translate="label comment" sortOrder="10" type="select"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Sender</label>
-                    <comment><![CDATA[Which configured "store email" identity sends the notification — General, Sales, Custom Email 1, etc.]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Email\Identity</source_model>
                 </field>
-                <field id="email_template" translate="label comment" sortOrder="20" type="select"
+                <field id="email_template" translate="label comment" sortOrder="20" type="text"
                        showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Email Template</label>
-                    <comment><![CDATA[The Magento email template used for the "back in stock" message. Edit at Marketing → Email Templates.]]></comment>
-                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                    <label>Email Template ID</label>
+                    <comment><![CDATA[Default: <code>etechflow_bisn_back_in_stock</code>]]></comment>
                 </field>
             </group>
         </section>

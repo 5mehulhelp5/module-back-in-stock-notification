@@ -4,7 +4,9 @@
     <update handle="styles"/>
     <body>
         <referenceContainer name="content">
-            <uiComponent name="etechflow_bisn_subscription_listing"/>
+            <block class="Magento\Backend\Block\Template"
+                   name="etechflow.bisn.license.activated"
+                   template="ETechFlow_BackInStockNotification::license/activated.phtml"/>
         </referenceContainer>
     </body>
 </page>
