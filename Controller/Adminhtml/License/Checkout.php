@@ -12,6 +12,7 @@ use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\HTTP\Client\Curl;
+use Magento\Framework\HTTP\Client\CurlFactory;
 
 /**
  * Creates a Stripe Checkout session using the keys entered in
@@ -26,16 +27,12 @@ class Checkout extends Action
     private const XML_STRIPE_PUBKEY  = 'etechflow_bisn/payment/stripe_publishable_key';
     private const XML_STRIPE_CURR    = 'etechflow_bisn/payment/stripe_currency';
 
-    /** Plan slugs → [name, price in USD cents, price display] */
-    private const PLAN_INFO = [
-        'bisn_starter'      => ['name' => 'Back-in-Stock Starter',      'amount' => 1900, 'display' => '$19'],
-        'bisn_professional' => ['name' => 'Back-in-Stock Professional',  'amount' => 4900, 'display' => '$49'],
-        'bisn_enterprise'   => ['name' => 'Back-in-Stock Enterprise',    'amount' => 9900, 'display' => '$99'],
-    ];
+    private const MODULE_ID = 'back-in-stock-notification';
 
     public function __construct(
         Context $context,
         private readonly Curl $curl,
+        private readonly CurlFactory $curlFactory,
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly EncryptorInterface $encryptor,
         private readonly LicenseValidator $licenseValidator
@@ -51,7 +48,7 @@ class Checkout extends Action
         $domain = $this->licenseValidator->getCurrentHost();
 
         // Validate inputs
-        if (!$plan || !isset(self::PLAN_INFO[$plan])) {
+        if (!$plan) {
             $this->messageManager->addErrorMessage(__('Invalid plan selected.'));
             return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('etechflow_bisn/license/gate');
         }
@@ -72,7 +69,13 @@ class Checkout extends Action
             return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('etechflow_bisn/license/gate');
         }
 
-        $planInfo   = self::PLAN_INFO[$plan];
+        // Price + name come AUTHORITATIVELY from the portal (admin-controlled,
+        // recurring or one-time), so the merchant can't tamper with the amount.
+        $planInfo = $this->fetchPlanFromPortal($plan, $domain);
+        if ($planInfo === null) {
+            $this->messageManager->addErrorMessage(__('That plan is not available right now. Please go back and try again.'));
+            return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('etechflow_bisn/license/gate');
+        }
         $successUrl = $this->getUrl('etechflow_bisn/license/activated') . '?session_id={CHECKOUT_SESSION_ID}&plan=' . urlencode($plan) . '&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '&email=' . urlencode($email);
         $cancelUrl  = $this->getUrl('etechflow_bisn/license/gate');
 
@@ -117,5 +120,44 @@ class Checkout extends Action
         // Redirect browser to Stripe Checkout
         $redirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         return $redirect->setUrl($data['url']);
+    }
+    /**
+     * Look up the chosen plan's name + amount (cents) from the portal's
+     * /license/plans endpoint, which reflects the admin's recurring/one-time choice.
+     *
+     * @return array{name:string, amount:int}|null
+     */
+    private function fetchPlanFromPortal(string $slug, string $domain): ?array
+    {
+        $portalBase = rtrim(str_replace('/license/validate', '', $this->licenseValidator->getPortalUrl()), '/');
+        $url = $portalBase . '/license/plans?module=' . self::MODULE_ID . '&domain=' . urlencode($domain);
+        try {
+            $curl = $this->curlFactory->create();
+            $curl->setTimeout(10);
+            $curl->addHeader('Accept', 'application/json');
+            $curl->addHeader('ngrok-skip-browser-warning', '1');
+            $curl->get($url);
+            $status = (int) $curl->getStatus();
+            $body   = (string) $curl->getBody();
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($status !== 200 || $body === '') {
+            return null;
+        }
+        $data = json_decode($body, true);
+        if (!is_array($data) || empty($data['plans']) || !is_array($data['plans'])) {
+            return null;
+        }
+        foreach ($data['plans'] as $card) {
+            if (($card['slug'] ?? '') === $slug) {
+                $amount = (int) ($card['amount_cents'] ?? 0);
+                if ($amount <= 0) {
+                    return null;
+                }
+                return ['name' => (string) ($card['name'] ?? 'License'), 'amount' => $amount];
+            }
+        }
+        return null;
     }
 }

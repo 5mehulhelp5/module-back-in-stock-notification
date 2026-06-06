@@ -31,6 +31,13 @@ class Gate extends Action
 
         $page = $this->pageFactory->create();
         $page->getConfig()->getTitle()->prepend(__('Back-in-Stock Notification — License Required'));
+        $portalBase = rtrim(str_replace('/license/validate', '', $this->licenseValidator->getPortalUrl()), '/');
+        $domain     = $this->licenseValidator->getCurrentHost();
+        $plansUrl   = $portalBase . '/license/plans?module=back-in-stock-notification&domain=' . urlencode($domain);
+        $block = $page->getLayout()->getBlock('etechflow.bisn.license.gate');
+        if ($block) {
+            $block->setData('plans_url', $plansUrl);
+        }
         return $page;
     }
 }
