@@ -108,6 +108,8 @@ class LicenseValidator
 
     public function isProductionEnvironment(): bool
     {
+        // Sandbox toggle removed: production licensing is always enforced.
+        return true;
         $v = $this->scopeConfig->getValue(self::XML_PATH_PRODUCTION_ENVIRONMENT, ScopeInterface::SCOPE_STORE);
         return ($v === null || $v === '') ? true : (bool) $v;
     }
