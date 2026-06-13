@@ -10,11 +10,6 @@
                 <ip_blocked>0</ip_blocked>
                 <portal_url>https://nonanarchically-rambunctious-lashay.ngrok-free.dev/license/validate</portal_url>
             </license>
-            <payment>
-                <stripe_secret_key></stripe_secret_key>
-                <stripe_publishable_key></stripe_publishable_key>
-                <stripe_currency>usd</stripe_currency>
-            </payment>
             <general>
                 <enabled>1</enabled>
                 <email_rate_limit>60</email_rate_limit>
