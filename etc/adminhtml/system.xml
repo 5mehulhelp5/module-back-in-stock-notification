@@ -42,7 +42,7 @@
                 </field>
             </group>
 
-            <!-- PAYMENT (STRIPE) -->
+            <!-- PAYMENT (PADDLE) -->
 
             <!-- GENERAL -->
             <group id="general" translate="label" sortOrder="20"

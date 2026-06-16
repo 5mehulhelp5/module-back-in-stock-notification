@@ -81,7 +81,7 @@ $plansUrl = (string) $block->getData('plans_url');
     <h3>&#128179; Complete your purchase</h3>
     <div id="etf-plan-tag" class="etf-plan-tag"></div>
     <p style="font-size:12px;color:#8fa3b8;margin:0 0 4px;">
-      You will be redirected to Stripe for secure payment. Your license key is generated automatically after payment.
+      You will be redirected to our secure checkout. Your license key is generated automatically after payment.
     </p>
     <form method="post" action="<?= $escaper->escapeUrl($checkoutUrl); ?>" id="etf-pay-form">
       <?= $block->getBlockHtml('formkey'); ?>
@@ -93,7 +93,7 @@ $plansUrl = (string) $block->getData('plans_url');
       <p style="font-size:11px;color:#4a5568;margin:10px 0 0;">
         License will be bound to: <strong style="color:#93c5fd;"><?= $escaper->escapeHtml($block->getUrl('', ['_current' => false])); ?></strong>
       </p>
-      <button type="submit" class="etf-form-submit">&#128179; Pay with Stripe &rarr;</button>
+      <button type="submit" class="etf-form-submit">&#128179; Pay by card &rarr;</button>
     </form>
     <span class="etf-back-link" onclick="document.getElementById('etf-checkout-form').classList.remove('active')">
       &larr; Back to plans
