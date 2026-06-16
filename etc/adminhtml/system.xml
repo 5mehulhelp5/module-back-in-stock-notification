@@ -20,7 +20,7 @@
                 <field id="license_key" translate="label comment" sortOrder="10" type="text"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>License Key</label>
-                    <comment><![CDATA[Paste your eTechFlow SP-XXXX subscription key. Generated automatically after Stripe payment.]]></comment>
+                    <comment><![CDATA[Paste your eTechFlow SP-XXXX subscription key. Generated automatically after checkout.]]></comment>
                 </field>
                 <field id="issued_key" translate="label comment" sortOrder="20" type="obscure"
                        showInDefault="1" showInWebsite="0" showInStore="0">
