@@ -1,17 +1,13 @@
 <?xml version="1.0"?>
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <update handle="styles"/>
     <body>
         <referenceContainer name="content">
             <block class="ETechFlow\BackInStockNotification\Block\Adminhtml\UpdateNotice"
-                   name="etechflow_bisn_update_notice_gate"
+                   name="etechflow_bisn_update_notice_config"
                    template="ETechFlow_BackInStockNotification::update-notice.phtml"
                    cacheable="false"
                    before="-"/>
-            <block class="Magento\Backend\Block\Template"
-                   name="etechflow.bisn.license.gate"
-                   template="ETechFlow_BackInStockNotification::license/gate.phtml"/>
         </referenceContainer>
     </body>
 </page>

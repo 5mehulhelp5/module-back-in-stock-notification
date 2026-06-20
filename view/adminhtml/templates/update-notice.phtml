@@ -1,0 +1,19 @@
+<?php
+$update = $block->getUpdateInfo();
+?>
+<?php if ($update): ?>
+<div style="background:#fff8e5;border:1px solid #f0c36d;border-left:4px solid #eaa800;border-radius:4px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px;">
+    <span style="font-size:22px;line-height:1;">&#128276;</span>
+    <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;color:#6b4e00;">
+            <?= $escaper->escapeHtml(__('Back-in-Stock Notification %1 is available', $update['latest'])); ?>
+            <span style="font-weight:400;color:#8a7430;"><?= $escaper->escapeHtml(__('(you have %1)', $update['installed'])); ?></span>
+        </div>
+        <div style="font-size:12px;color:#8a7430;margin-top:3px;">
+            <?= $escaper->escapeHtml(__('Update with:')); ?>
+            <code style="background:#fff;border:1px solid #e3d3a3;border-radius:3px;padding:1px 6px;"><?= $escaper->escapeHtml($block->getUpdateCommand()); ?></code>
+            <?php if (!empty($update['notes'])): ?>&mdash; <?= $escaper->escapeHtml($update['notes']); ?><?php endif; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>

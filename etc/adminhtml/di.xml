@@ -1,28 +1,17 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-
     <!--
-        Standard Magento admin-grid data source.
-        SearchResult uses Document items (which implement getCustomAttributes())
-        so the UI DataProvider can render rows. mainTable + resourceModel point
-        at our subscription table.
-    -->
-    <virtualType name="ETechFlowBisnSubscriptionGridSearchResult"
-                 type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
-        <arguments>
-            <argument name="mainTable" xsi:type="string">etechflow_bisn_subscription</argument>
-            <argument name="resourceModel" xsi:type="string">ETechFlow\BackInStockNotification\Model\ResourceModel\Subscription</argument>
-            <argument name="identifierName" xsi:type="string">subscription_id</argument>
-        </arguments>
-    </virtualType>
+        The subscription admin-grid data source (CollectionFactory.collections)
+        and its ETechFlowBisnSubscriptionGridSearchResult virtualType were moved
+        to the GLOBAL etc/di.xml on 2026-06-11.
 
-    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
-        <arguments>
-            <argument name="collections" xsi:type="array">
-                <item name="etechflow_bisn_subscription_listing_data_source"
-                      xsi:type="string">ETechFlowBisnSubscriptionGridSearchResult</item>
-            </argument>
-        </arguments>
-    </type>
+        Reason: declaring CollectionFactory.collections in an area-scoped di.xml
+        makes Magento's cross-area argument merge (array-union) REPLACE the
+        global collections registry for that area, which silently broke every
+        grid registered in global etc/di.xml (product warnings, sales
+        credit-memo/shipment, url-rewrite, all other eTechFlow grids). Grid data
+        sources must always be registered in global etc/di.xml. Do NOT re-add a
+        CollectionFactory.collections argument in this file.
+    -->
 </config>

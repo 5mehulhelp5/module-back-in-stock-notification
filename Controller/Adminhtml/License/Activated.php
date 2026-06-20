@@ -16,9 +16,9 @@ use Magento\Framework\HTTP\Client\CurlFactory;
 use Magento\Framework\View\Result\PageFactory;
 
 /**
- * Landing page after Stripe payment. Calls the eTechFlow portal to activate the
- * subscription (the portal verifies the Stripe session with ITS OWN key), gets
- * the license key, saves it to config, and shows success.
+ * Landing page after Stripe OR PayPal payment. For PayPal it captures the order
+ * via the portal; for Stripe it activates the session via the portal. Either way
+ * the portal verifies with ITS OWN keys, returns the SP-key, which is saved.
  */
 class Activated extends Action
 {
@@ -38,26 +38,36 @@ class Activated extends Action
     public function execute(): ResultInterface
     {
         $sessionId = trim((string) $this->getRequest()->getParam('session_id', ''));
+        $token     = trim((string) $this->getRequest()->getParam('token', ''));
+        $method    = trim((string) $this->getRequest()->getParam('method', ''));
         $subId     = trim((string) $this->getRequest()->getParam('sub_id', ''));
         $plan      = trim((string) $this->getRequest()->getParam('plan', ''));
         $domain    = trim((string) $this->getRequest()->getParam('domain', '')) ?: $this->licenseValidator->getCurrentHost();
         $name      = trim((string) $this->getRequest()->getParam('name', ''));
         $email     = trim((string) $this->getRequest()->getParam('email', ''));
 
-        if (!$sessionId) {
+        $isPaypal = ($method === 'paypal') || ($token !== '' && $sessionId === '');
+
+        if ($sessionId === '' && $token === '') {
             $this->messageManager->addErrorMessage(__('Invalid payment callback.'));
             return $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('etechflow_bisn/license/gate');
         }
 
-        $portal  = rtrim(str_replace('/license/validate', '', $this->licenseValidator->getPortalUrl()), '/');
-        $payload = json_encode(array_filter([
-            'session_id' => $sessionId,
-            'sub_id'     => $subId ?: null,
-            'domain'     => $domain,
-            'name'       => $name,
-            'email'      => $email,
-            'plan'       => $plan,
-        ]));
+        $portal = rtrim(str_replace('/license/validate', '', $this->licenseValidator->getPortalUrl()), '/');
+        if ($isPaypal) {
+            $url     = $portal . '/payment/paypal/capture';
+            $payload = json_encode(array_filter(['orderID' => $token, 'sub_id' => $subId ?: null]));
+        } else {
+            $url     = $portal . '/license/activate';
+            $payload = json_encode(array_filter([
+                'session_id' => $sessionId,
+                'sub_id'     => $subId ?: null,
+                'domain'     => $domain,
+                'name'       => $name,
+                'email'      => $email,
+                'plan'       => $plan,
+            ]));
+        }
 
         $licenseKey = '';
         $planName   = '';
@@ -65,7 +75,7 @@ class Activated extends Action
 
         try {
             $curl = $this->curlFactory->create();
-            $curl->setTimeout(25);
+            $curl->setTimeout(30);
             $curl->addHeader('Content-Type', 'application/json');
             $curl->addHeader('Accept', 'application/json');
             $curl->addHeader('X-ETF-License-Token', 'lcsk_8f3b9d2a7c14e605b9af2e7c1d8043f6');

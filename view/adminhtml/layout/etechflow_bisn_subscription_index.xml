@@ -4,6 +4,11 @@
     <update handle="styles"/>
     <body>
         <referenceContainer name="content">
+            <block class="ETechFlow\BackInStockNotification\Block\Adminhtml\UpdateNotice"
+                   name="etechflow_bisn_update_notice"
+                   template="ETechFlow_BackInStockNotification::update-notice.phtml"
+                   cacheable="false"
+                   before="-"/>
             <uiComponent name="etechflow_bisn_subscription_listing"/>
         </referenceContainer>
     </body>

@@ -1,8 +1,8 @@
 {
     "name": "etechflow/module-back-in-stock-notification",
-    "description": "Back-in-stock notification for Magento 2. Customer subscribes on out-of-stock product pages, gets emailed when stock returns. Anonymous + customer-linked subscriptions, multi-store aware, one-click unsubscribe, queued/rate-limited delivery. Standalone — works without any other ETechFlow module — and integrates richer when paired with NDE / BED / ISP.",
+    "description": "Back-in-stock notification for Magento 2. Customer subscribes on out-of-stock product pages, gets emailed when stock returns. Anonymous + customer-linked subscriptions, multi-store aware, one-click unsubscribe, queued/rate-limited delivery. Standalone \u2014 works without any other ETechFlow module \u2014 and integrates richer when paired with NDE / BED / ISP.",
     "type": "magento2-module",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "license": "proprietary",
     "authors": [
         {

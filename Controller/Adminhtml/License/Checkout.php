@@ -12,9 +12,10 @@ use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\HTTP\Client\CurlFactory;
 
 /**
- * Starts checkout by delegating to the eTechFlow licensing portal. The portal
- * creates the Stripe Checkout session using ITS OWN keys (managed in the portal
- * admin -> Settings) and returns the Stripe URL. No Stripe keys live in Magento.
+ * Starts checkout by delegating to the eTechFlow licensing portal. The posted
+ * `method` (stripe|paypal) chooses the portal endpoint; the portal creates the
+ * session/order with ITS OWN keys and returns a redirect URL (Stripe Checkout or
+ * the PayPal approval page). No payment keys live in Magento.
  */
 class Checkout extends Action
 {
@@ -35,6 +36,8 @@ class Checkout extends Action
         $plan   = trim((string) $this->getRequest()->getPost('plan', ''));
         $name   = trim((string) $this->getRequest()->getPost('name', ''));
         $email  = trim((string) $this->getRequest()->getPost('email', ''));
+        $method = trim((string) $this->getRequest()->getPost('method', 'stripe'));
+        $method = $method === 'paypal' ? 'paypal' : 'stripe';
         $domain = $this->licenseValidator->getCurrentHost();
 
         $gate = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT)->setPath('etechflow_bisn/license/gate');
@@ -49,6 +52,9 @@ class Checkout extends Action
         }
 
         $portalBase = rtrim(str_replace('/license/validate', '', $this->licenseValidator->getPortalUrl()), '/');
+        $endpoint = $method === 'paypal'
+            ? '/payment/paypal/create-order'
+            : '/payment/stripe/create-session';
         $payload = json_encode([
             'plan'             => $plan,
             'name'             => $name,
@@ -61,7 +67,7 @@ class Checkout extends Action
 
         try {
             $curl = $this->curlFactory->create();
-            $curl->setTimeout(20);
+            $curl->setTimeout(25);
             $curl->addHeader('Content-Type', 'application/json');
             $curl->addHeader('Accept', 'application/json');
             $curl->addHeader('X-ETF-License-Token', 'lcsk_8f3b9d2a7c14e605b9af2e7c1d8043f6');

@@ -27,4 +27,35 @@
                 type="ETechFlow\BackInStockNotification\Plugin\Customer\AutoLinkSubscriptionsPlugin"
                 sortOrder="100"/>
     </type>
+
+    <!--
+        Admin-grid data source. MUST live in GLOBAL etc/di.xml, NOT
+        etc/adminhtml/di.xml. Magento merges a type's arguments across areas by
+        array-union, so declaring CollectionFactory.collections in an area-scoped
+        di.xml REPLACES (not merges) the global registry for that area, silently
+        breaking every other grid registered in global etc/di.xml (product
+        warnings, sales credit-memo/shipment, url-rewrite, every other eTechFlow
+        grid). Always register grid data sources here in global scope.
+
+        SearchResult uses Document items (which implement getCustomAttributes())
+        so the UI DataProvider can render rows. mainTable + resourceModel point
+        at our subscription table.
+    -->
+    <virtualType name="ETechFlowBisnSubscriptionGridSearchResult"
+                 type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">etechflow_bisn_subscription</argument>
+            <argument name="resourceModel" xsi:type="string">ETechFlow\BackInStockNotification\Model\ResourceModel\Subscription</argument>
+            <argument name="identifierName" xsi:type="string">subscription_id</argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="etechflow_bisn_subscription_listing_data_source"
+                      xsi:type="string">ETechFlowBisnSubscriptionGridSearchResult</item>
+            </argument>
+        </arguments>
+    </type>
 </config>
