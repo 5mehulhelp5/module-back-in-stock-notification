@@ -55,23 +55,27 @@ class UpdateChecker
 
     private function installedVersion(): string
     {
-        if (class_exists('\\Composer\\InstalledVersions')) {
-            try { $v = \Composer\InstalledVersions::getPrettyVersion(self::PACKAGE); if ($v) return ltrim((string)$v, 'v'); } catch (\Throwable $e) {}
-        }
+        // Read the installed Composer package version (matches the deployed
+        // package; independent of setup_module schema_version, which can lag
+        // the Composer release numbering and cause a false 'update available').
+        try {
+            $registrar = new \Magento\Framework\Component\ComponentRegistrar();
+            $path = $registrar->getPath(\Magento\Framework\Component\ComponentRegistrar::MODULE, self::MODULE_NAME);
+            if ($path) {
+                $composerFile = $path . '/composer.json';
+                if (is_file($composerFile)) {
+                    $data = json_decode((string)file_get_contents($composerFile), true);
+                    if (is_array($data) && !empty($data['version'])) {
+                        return ltrim((string)$data['version'], 'v');
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
         try {
             $v = $this->resource->getConnection()->fetchOne(
                 'SELECT schema_version FROM ' . $this->resource->getTableName('setup_module') . ' WHERE module = ?',
-                [self::MODULE_NAME]
-            );
-            if ($v) return ltrim((string)$v, 'v');
-        } catch (\Throwable $e) {}
-        try {
-            $path = $this->componentRegistrar->getPath(ComponentRegistrar::MODULE, self::MODULE_NAME);
-            if ($path && is_file($path . '/composer.json')) {
-                $json = json_decode((string) file_get_contents($path . '/composer.json'), true);
-                if (!empty($json['version'])) return ltrim((string)$json['version'], 'v');
-            }
-        } catch (\Throwable $e) {}
-        return '';
+                [self::MODULE_NAME]);
+            return $v ? (string)$v : '';
+        } catch (\Throwable $e) { return ''; }
     }
 }
